@@ -1,15 +1,17 @@
 // 주변 검색 — 관광공사 TourAPI(영문) 데이터. 서버 미연결 시 큐레이션 스팟으로 대체
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { SPOTS } from '../data/spots'
+import { Link, useNavigate } from 'react-router-dom'
+import { CATEGORY_ICON, SPOTS } from '../data/spots'
 import { NEARBY_TYPES, fetchNearby, isLive, type NearbyItem } from '../lib/api'
 import { distanceKm, formatDistance, walkMinutes } from '../lib/geo'
 import { useApp } from '../lib/state'
 import SpotCard from '../components/SpotCard'
+import NearbyMap, { type MapPin } from '../components/NearbyMap'
 
 const TYPE_ICON: Record<string, string> = { '76': '📍', '78': '🏛️', '79': '🛍️', '82': '🍜', '85': '🎉', '75': '🚴', '80': '🏨' }
 
 export default function NearbyPage() {
+  const nav = useNavigate()
   const { me, locate, locating, congestion } = useApp()
   const [type, setType] = useState('')
   const [radius, setRadius] = useState(1000)
@@ -34,6 +36,27 @@ export default function NearbyPage() {
       .sort((a, b) => a.d - b.d)
       .slice(0, 20)
   }, [me])
+
+  // 지도에 찍을 점. 서버 결과가 있으면 그것을, 없으면 우리 큐레이션을 쓴다.
+  const pins: MapPin[] = useMemo(() => {
+    if (items && items.length > 0) {
+      return items.map((it) => ({
+        id: it.contentId,
+        lat: it.lat,
+        lng: it.lng,
+        icon: TYPE_ICON[it.contentTypeId] ?? '📍',
+        label: it.title,
+      }))
+    }
+    return fallback.map(({ s }) => ({
+      id: s.id,
+      lat: s.lat,
+      lng: s.lng,
+      icon: CATEGORY_ICON[s.category],
+      label: s.name,
+      onClick: () => nav(`/spot/${s.id}`),
+    }))
+  }, [items, fallback, nav])
 
   return (
     <div className="page">
@@ -61,6 +84,8 @@ export default function NearbyPage() {
               <button key={r} className={'chip' + (radius === r ? ' on' : '')} onClick={() => setRadius(r)}>{r < 1000 ? `${r} m` : `${r / 1000} km`}</button>
             ))}
           </div>
+
+          <NearbyMap me={me} radius={radius} pins={pins} />
 
           {isLive ? (
             <>

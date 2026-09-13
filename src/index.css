@@ -342,3 +342,43 @@ button.pill:active { transform: scale(.96); }
 /* 나중에 다시 열어 보는 링크 */
 .intro-relink { display: block; text-align: center; font-size: 13px; color: var(--muted); margin-top: 4px; padding: 10px; }
 .intro-relink u { text-decoration-color: var(--line); }
+
+/* ── 주변 지도 (NearbyMap) ── */
+.near-map {
+  position: relative; height: 38vh; min-height: 230px; max-height: 340px;
+  margin: 8px 0 12px; border-radius: var(--radius); overflow: hidden;
+  border: 1px solid var(--line); background: #e5e7eb;
+}
+.near-map .leaflet-container { height: 100%; width: 100%; }
+/* 지도가 화면 맨 위 요소를 덮지 않도록. Leaflet 은 기본이 400 이다. */
+.near-map .leaflet-pane { z-index: 1; }
+
+/* 거리 눈금 — 고리 위에 얹히므로 배경을 깔아 글씨가 읽히게 한다 */
+/* 눈금 — 고른 반경과 그 바로 아래 것만 보여 준다.
+   멀리서 보면 작은 원들이 가운데 뭉쳐 눈금이 서로 겹친다.
+   아이콘 HTML 은 건드리지 않고 CSS 로만 감춰야 Leaflet 과 React 가 부딪히지 않는다. */
+.ring-label {
+  display: inline-block; padding: 1px 6px; border-radius: 999px;
+  background: rgba(255,255,255,.9); border: 1px solid var(--line);
+  font-size: 10.5px; font-weight: 600; color: var(--muted); white-space: nowrap;
+  line-height: 1.5; visibility: hidden;
+}
+.near-map[data-radius="500"]  .ring-label[data-r="500"],
+.near-map[data-radius="1000"] .ring-label[data-r="500"],
+.near-map[data-radius="1000"] .ring-label[data-r="1000"],
+.near-map[data-radius="2000"] .ring-label[data-r="1000"],
+.near-map[data-radius="2000"] .ring-label[data-r="2000"],
+.near-map[data-radius="5000"] .ring-label[data-r="2000"],
+.near-map[data-radius="5000"] .ring-label[data-r="5000"] { visibility: visible; }
+
+/* 그중에서도 지금 고른 반경을 진하게 */
+.near-map[data-radius="500"]  .ring-label[data-r="500"],
+.near-map[data-radius="1000"] .ring-label[data-r="1000"],
+.near-map[data-radius="2000"] .ring-label[data-r="2000"],
+.near-map[data-radius="5000"] .ring-label[data-r="5000"] {
+  color: var(--primary); font-weight: 800;
+  background: #fff; border-color: rgba(15,118,110,.45);
+}
+
+/* 주변 지점 핀 — 관광지 핀보다 조용하게 */
+.marker.near { background: #fff; color: var(--text); font-size: 12px; border-color: #fff; box-shadow: 0 1px 5px rgba(0,0,0,.3); }
