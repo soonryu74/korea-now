@@ -17,6 +17,17 @@ concurrency:
   group: pages
   cancel-in-progress: false
 
+# ── 앱이 올라갈 주소 ─────────────────────────────────────────────
+# 지금은 깃허브가 주는 하위 경로에 올린다.
+# korea-now.com 의 DNS 가 퍼지고 저장소 설정(Settings > Pages > Custom domain)에
+# 도메인을 넣은 뒤, 아래 두 줄을 이렇게 바꾸면 도메인 루트로 옮겨 간다.
+#   SITE_ORIGIN: https://korea-now.com
+#   SITE_BASE: ''
+# 순서를 거꾸로 하면(도메인 준비 전에 루트로 빌드) 자산 경로가 어긋나 앱이 열리지 않는다.
+env:
+  SITE_ORIGIN: https://soonryu74.github.io
+  SITE_BASE: /korea-now
+
 jobs:
   build:
     runs-on: ubuntu-24.04
@@ -37,9 +48,6 @@ jobs:
           npm run lint
 
       - name: 빌드
-        env:
-          SITE_ORIGIN: https://korea-now.com
-          SITE_BASE: ''          # 빈 값 = 도메인 루트
         run: npm run build
 
       - name: 배포 결과 점검
@@ -47,14 +55,16 @@ jobs:
           # 서버 주소가 빠지면 앱이 조용히 데모 모드로 뜬다. 그대로 내보내지 않는다.
           grep -q "supabase.co" dist/assets/index-*.js \
             || { echo "::error::Supabase 주소가 번들에 없습니다 (.env.production 확인)"; exit 1; }
-          # 하위 경로가 남아 있으면 도메인 루트에서 깨진다
-          ! grep -q '"/korea-now/' dist/index.html \
-            || { echo "::error::/korea-now/ 경로가 남아 있습니다 (SITE_BASE 확인)"; exit 1; }
+          # 자산 경로가 SITE_BASE 와 맞는지 본다. 어긋나면 화면이 백지로 뜬다.
+          grep -q "src=\"${SITE_BASE:-}/assets/" dist/index.html \
+            || { echo "::error::자산 경로가 SITE_BASE(${SITE_BASE:-/}) 와 맞지 않습니다"; exit 1; }
           test -f dist/sitemap.xml && test -f dist/robots.txt
           echo "정적 페이지 $(ls dist/spot | grep -v index.html | wc -l)개"
 
       - name: 도메인 고정
-        # 이 파일이 있어야 깃허브가 배포할 때마다 사용자 지정 도메인을 유지한다
+        # 도메인 루트로 올릴 때만 쓴다. 하위 경로 배포에 이 파일이 남으면
+        # 깃허브가 아직 준비되지 않은 도메인으로 넘겨 버린다.
+        if: env.SITE_BASE == ''
         run: echo 'korea-now.com' > dist/CNAME
 
       - uses: actions/configure-pages@v5
