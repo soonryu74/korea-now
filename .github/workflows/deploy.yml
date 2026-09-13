@@ -1,0 +1,73 @@
+name: 배포 (korea-now.com)
+
+# main 에 올라가면 빌드해서 깃허브 페이지에 올린다.
+# 주소는 site.config.mjs 가 정하고, 여기서는 환경변수로 덮어쓴다.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 배포가 겹치면 나중 것만 남긴다. 앞선 배포를 중간에 끊지는 않는다.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: 설치
+        run: npm ci
+
+      - name: 검사
+        run: |
+          npx tsc --noEmit -p tsconfig.app.json
+          npm run lint
+
+      - name: 빌드
+        env:
+          SITE_ORIGIN: https://korea-now.com
+          SITE_BASE: ''          # 빈 값 = 도메인 루트
+        run: npm run build
+
+      - name: 배포 결과 점검
+        run: |
+          # 서버 주소가 빠지면 앱이 조용히 데모 모드로 뜬다. 그대로 내보내지 않는다.
+          grep -q "supabase.co" dist/assets/index-*.js \
+            || { echo "::error::Supabase 주소가 번들에 없습니다 (.env.production 확인)"; exit 1; }
+          # 하위 경로가 남아 있으면 도메인 루트에서 깨진다
+          ! grep -q '"/korea-now/' dist/index.html \
+            || { echo "::error::/korea-now/ 경로가 남아 있습니다 (SITE_BASE 확인)"; exit 1; }
+          test -f dist/sitemap.xml && test -f dist/robots.txt
+          echo "정적 페이지 $(ls dist/spot | grep -v index.html | wc -l)개"
+
+      - name: 도메인 고정
+        # 이 파일이 있어야 깃허브가 배포할 때마다 사용자 지정 도메인을 유지한다
+        run: echo 'korea-now.com' > dist/CNAME
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-24.04
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
