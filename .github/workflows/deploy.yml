@@ -18,15 +18,13 @@ concurrency:
   cancel-in-progress: false
 
 # ── 앱이 올라갈 주소 ─────────────────────────────────────────────
-# 지금은 깃허브가 주는 하위 경로에 올린다.
-# korea-now.com 의 DNS 가 퍼지고 저장소 설정(Settings > Pages > Custom domain)에
-# 도메인을 넣은 뒤, 아래 두 줄을 이렇게 바꾸면 도메인 루트로 옮겨 간다.
-#   SITE_ORIGIN: https://korea-now.com
-#   SITE_BASE: ''
-# 순서를 거꾸로 하면(도메인 준비 전에 루트로 빌드) 자산 경로가 어긋나 앱이 열리지 않는다.
+# 이 두 줄이 배포 주소를 정한다. 코드 어디에도 경로를 직접 적지 않는다.
+# SITE_BASE 가 빈 값이면 도메인 루트, '/korea-now' 같으면 그 하위 경로.
+# 도메인을 옮길 때는 DNS 와 저장소의 Custom domain 을 먼저 맞춘 뒤에 바꿀 것.
+# 거꾸로 하면 자산 경로가 어긋나 화면이 백지로 뜬다.
 env:
-  SITE_ORIGIN: https://soonryu74.github.io
-  SITE_BASE: /korea-now
+  SITE_ORIGIN: https://korea-now.com
+  SITE_BASE: ''
 
 jobs:
   build:
