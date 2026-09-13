@@ -58,6 +58,10 @@ jobs:
         run: echo 'korea-now.com' > dist/CNAME
 
       - uses: actions/configure-pages@v5
+        with:
+          # 저장소에 페이지가 아직 꺼져 있으면 여기서 켠다.
+          # 설정 화면에 들어가지 않고도 첫 배포가 되도록.
+          enablement: true
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
