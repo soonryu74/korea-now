@@ -37,9 +37,12 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
         navigateFallback: `${BASE_SLASH}index.html`,
-        // 관광지별 정적 페이지는 앱 껍데기로 가로채지 않는다.
+        // 정적으로 구운 페이지는 앱 껍데기로 가로채지 않는다.
         // 검색으로 들어온 사람이 그 페이지를 그대로 봐야 하기 때문.
-        navigateFallbackDenylist: [new RegExp(`^${BASE}/spot/`)],
+        navigateFallbackDenylist: [
+          new RegExp(`^${BASE}/spot/`),
+          new RegExp(`^${BASE}/(about|privacy|terms|contact)/`),
+        ],
         runtimeCaching: [
           {
             // 지도 타일: 한 번 본 타일은 30일 보관 (최대 300장)

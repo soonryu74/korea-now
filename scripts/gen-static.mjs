@@ -14,6 +14,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { build as esbuild } from 'esbuild'
 import { BASE, ORIGIN } from '../site.config.mjs'
+import { CONTACT, DOC_PAGES } from './docPages.mjs'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const root = join(here, '..')
@@ -88,6 +89,18 @@ h2{font-size:19px;margin:34px 0 12px;letter-spacing:-.2px}
 footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--line);font-size:12.5px;color:var(--faint);line-height:1.65}
 footer a{color:var(--faint)}
 a{color:var(--teal-deep)}
+.upd{font-size:13px;color:var(--faint);margin:0 0 26px}
+.doc h2{margin:32px 0 10px}
+.doc p{margin:0 0 14px;max-width:62ch}
+.doc ul{margin:0 0 16px;padding-left:20px;max-width:62ch}
+.doc li{margin-bottom:7px}
+.doc code{font-size:13.5px;background:var(--card);border:1px solid var(--line);border-radius:5px;padding:1px 5px}
+.foot-nav{display:flex;flex-wrap:wrap;gap:6px 16px;margin-bottom:12px}
+.foot-nav a{font-weight:600}
+.dish-list{list-style:none;margin:0 0 18px;padding:0;display:grid;gap:7px}
+.dish-list li{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 14px;font-size:15px}
+.dish-list .ko-inline{font-size:15.5px;color:var(--soft)}
+.dish-list .d{margin-left:auto;font-size:13px;color:var(--faint);white-space:nowrap}
 `
 
 function quietDayRow(s, rhythm) {
@@ -111,7 +124,115 @@ function quietDayRow(s, rhythm) {
   }
 }
 
-function spotPage(s, all, dist2, rhythm) {
+
+// ── 본문 산문 ────────────────────────────────────────────────
+// 전부 우리가 가진 데이터에서만 만든다. 없는 사실을 지어내지 않는다.
+
+const listWords = (a) => (a.length < 2 ? (a[0] ?? '') : `${a.slice(0, -1).join(', ')} and ${a.at(-1)}`)
+
+/** 언제 가면 좋은가 — 휴관일·요일 지수·여는 시간을 엮는다 */
+function whenToGo(s, rhythm) {
+  const out = []
+  const closedNames = (s.closedDays ?? []).map((d) => `${DAY[d]}s`)
+
+  if (closedNames.length) {
+    out.push(`<p><b>${esc(s.name)} is closed on ${listWords(closedNames)}.</b> Arriving on a closing day is the
+      most common way to lose a morning in Korea, and the gate will not make an exception for a visitor who
+      has come a long way.</p>`)
+  } else {
+    out.push(`<p>There is no weekly closing day here — you can come any day of the week.</p>`)
+  }
+
+  const r = rhythm[s.lDong?.signgu ?? '']
+  if (r) {
+    const NAME = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+    const closed = new Set(s.closedDays ?? [])
+    const days = r.idx.map((index, i) => ({ jsDay: (i + 1) % 7, index }))
+    const open = days.filter((d) => !closed.has(d.jsDay))
+    if (open.length) {
+      const best = open.reduce((a, b) => (b.index < a.index ? b : a))
+      const busiest = open.reduce((a, b) => (b.index > a.index ? b : a))
+      const gap = Math.round(((busiest.index - best.index) / best.index) * 100)
+      const blocked = days.filter((d) => closed.has(d.jsDay) && d.index < best.index)
+        .sort((a, b) => a.index - b.index)[0]
+      out.push(`<p>Counting foreign visitors to ${esc(r.gu)} over twelve weeks, <b>${NAME[best.jsDay]} is the
+        quietest day you can actually go</b> and ${NAME[busiest.jsDay]} the busiest — a difference of about
+        ${gap}%. ${blocked ? `${NAME[blocked.jsDay]} is quieter still, but that is a closing day.` : ''}
+        These are district-wide figures rather than a headcount at the gate, so treat them as a tendency.</p>`)
+    }
+  }
+
+  if (s.hours) {
+    const late = Number(s.hours.close.slice(0, 2)) >= 20
+    out.push(`<p>Opening hours are ${esc(s.hours.open)} to ${esc(s.hours.close)}${
+      s.hoursNote ? `. ${esc(s.hoursNote)}` : ''
+    }.${late ? ' It stays open into the evening, which is usually the calmest and coolest time to come.' : ''}
+      Tour groups tend to arrive mid-morning and again after lunch; the first hour after opening is
+      normally the quietest stretch of any day.</p>`)
+  } else {
+    out.push(`<p>This is an open area rather than a ticketed site, so there are no opening hours to work around.
+      Early morning and late evening are the quietest.</p>`)
+  }
+  return out.join('\n')
+}
+
+/** 얼마 드는가 */
+function costProse(s) {
+  const out = []
+  if (s.fee.adult === 0) {
+    out.push(`<p><b>Entry is free.</b> ${s.fee.note ? esc(s.fee.note) + ' ' : ''}Nothing needs to be booked or
+      queued for in advance.</p>`)
+  } else {
+    out.push(`<p>Adult admission is <b>${esc(won(s.fee.adult))}</b>${
+      s.fee.note ? ` — ${esc(s.fee.note)}` : ''
+    }. By the standards of most countries this is very cheap, and it is charged at the gate rather than
+      online, so there is no need to book ahead.</p>`)
+  }
+  out.push(
+    s.cardOk
+      ? `<p>Cards are accepted. Foreign Visa and Mastercard work almost everywhere in Korea, and contactless
+         is normal.</p>`
+      : `<p><b>Bring cash.</b> Cards are not reliably accepted here. Small notes are easier than large ones —
+         a ₩50,000 note for a ₩3,000 purchase is awkward at a market stall.</p>`,
+  )
+  if (s.english === 'none' || s.english === 'some') {
+    out.push(`<p>${
+      s.english === 'none'
+        ? 'There is little or no English signage.'
+        : 'English signage is partial — enough to find your way, not enough to explain what you are looking at.'
+    } The Korean name above is worth showing to a taxi driver or a passer-by; it works better than
+      pronouncing it.</p>`)
+  }
+  return out.join('\n')
+}
+
+/** 근처에서 뭘 먹나 — 시장·먹자골목이 2.5 km 안에 있을 때만 */
+function eatNearby(s, foodPlaces, byId) {
+  const near = foodPlaces
+    .map((f) => ({ f, spot: byId[f.spotId] }))
+    .filter((x) => x.spot && x.spot.id !== s.id)
+    .map((x) => ({ ...x, d: km(s, x.spot) }))
+    .filter((x) => x.d <= 2.5)
+    .sort((a, b) => a.d - b.d)
+    .slice(0, 2)
+  if (!near.length) return ''
+
+  const blocks = near.map(({ f, spot, d }) => {
+    const dishes = f.dishes.slice(0, 3).map(
+      (dish) => `<li><b>${esc(dish.en)}</b> <span class="ko-inline">${esc(dish.ko)}</span>
+        <span class="d">₩${dish.won[0].toLocaleString('en-US')}–${dish.won[1].toLocaleString('en-US')}</span></li>`,
+    ).join('')
+    return `<p><b><a href="${BASE}/spot/${spot.id}/">${esc(spot.name)}</a></b> is
+      ${d < 1 ? `${Math.round(d * 1000)} m` : `${d.toFixed(1)} km`} away. ${esc(f.why)}</p>
+      <ul class="dish-list">${dishes}</ul>`
+  }).join('')
+
+  return `<h2>Eat nearby</h2>${blocks}
+    <p style="font-size:14.5px;color:var(--faint)">Prices are per person and were checked in September 2026.
+    Market stalls are often cash-only even where restaurants take cards.</p>`
+}
+
+function spotPage(s, all, dist2, rhythm, foodPlaces, byId) {
   const url = `${SITE}${BASE}/spot/${s.id}/`
   // 앱으로 들어가는 링크는 상대 주소여야 한다. 절대 주소로 두면 미리보기나 다른 호스트에서 깨진다.
   const appUrl = `${BASE}/#/spot/${s.id}`
@@ -242,7 +363,22 @@ function spotPage(s, all, dist2, rhythm) {
 
 <div class="tip"><b>Show this to a taxi driver</b> — ${esc(s.nameKo)}</div>
 
+<h2>When to go</h2>
+${whenToGo(s, rhythm)}
+
+<h2>What it costs, and what to bring</h2>
+${costProse(s)}
+
 <h2>Getting there</h2>
+${
+  s.station
+    ? `<p>The nearest subway stop is <b>${esc(s.station.nameEn)}</b> (${esc(s.station.name)}역) on
+       Line ${esc(s.station.lines.join(' and '))}, about ${s.station.walkMin} minutes on foot. Seoul's subway
+       signs and announcements are in English, and a T-money card bought at any convenience store works on
+       every line and bus.</p>`
+    : `<p>There is no subway station close by. A taxi or an intercity bus is usually the way in — show the
+       Korean name above to the driver.</p>`
+}
 <p>
   <a href="https://www.google.com/maps/search/?api=1&amp;query=${s.lat},${s.lng}" rel="noopener">Google Maps</a> ·
   <a href="https://map.naver.com/p/search/${encodeURIComponent(s.nameKo)}" rel="noopener">Naver Map</a> ·
@@ -252,13 +388,19 @@ function spotPage(s, all, dist2, rhythm) {
   Google Maps shows public transport in Korea but not walking routes. Naver or Kakao Map gives walking directions.
 </p>
 
+${eatNearby(s, foodPlaces, byId)}
+
 <h2>Near here</h2>
 <ul class="near">${near}</ul>
 
 <footer>
+  <nav class="foot-nav">
+    <a href="${BASE}/about/">About</a><a href="${BASE}/privacy/">Privacy</a><a href="${BASE}/terms/">Terms</a><a href="${BASE}/contact/">Contact</a>
+  </nav>
   <a href="${BASE}/">Korea Now</a> shows how crowded a place is before you go, plus admission, opening hours and closed days.<br>
   Crowd levels for Seoul come from Seoul city open data; elsewhere from a Korea Tourism Organization forecast.
   Fees and hours are checked periodically — confirm at the gate for paid attractions.
+  Found a price that has changed? <a href="mailto:${CONTACT}">${CONTACT}</a>
 </footer>
 </div>
 </body>
@@ -309,7 +451,48 @@ function hubPage(spots, regions) {
 </p>
 <a class="cta" href="${BASE}/">Open the live map →</a>
 ${byRegion}
-<footer><a href="${BASE}/">Korea Now</a> · Go when it's quiet.</footer>
+<footer>
+  <nav class="foot-nav">
+    <a href="${BASE}/about/">About</a><a href="${BASE}/privacy/">Privacy</a><a href="${BASE}/terms/">Terms</a><a href="${BASE}/contact/">Contact</a>
+  </nav>
+  <a href="${BASE}/">Korea Now</a> · Go when it's quiet. · <a href="mailto:${CONTACT}">${CONTACT}</a>
+</footer>
+</div>
+</body>
+</html>`
+}
+
+function docPage(d) {
+  const url = `${SITE}${BASE}/${d.slug}/`
+  return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>${esc(d.title)} · Korea Now</title>
+<meta name="description" content="${esc(d.desc)}">
+<link rel="canonical" href="${url}">
+<meta name="theme-color" content="#0f766e">
+<link rel="icon" type="image/svg+xml" href="${BASE}/favicon.svg">
+<meta property="og:type" content="website">
+<meta property="og:title" content="${esc(d.title)} · Korea Now">
+<meta property="og:description" content="${esc(d.desc)}">
+<meta property="og:url" content="${url}">
+<style>${CSS}</style>
+</head>
+<body>
+<div class="wrap">
+<header><a class="brand" href="${BASE}/">Korea <span>Now</span></a>
+<div class="crumb"><a href="${BASE}/">Home</a> › ${esc(d.title)}</div></header>
+<h1>${esc(d.h1)}</h1>
+<p class="lede">${esc(d.lede)}</p>
+<div class="doc">${d.body}</div>
+<footer>
+  <nav class="foot-nav">
+    <a href="${BASE}/about/">About</a><a href="${BASE}/privacy/">Privacy</a><a href="${BASE}/terms/">Terms</a><a href="${BASE}/contact/">Contact</a>
+  </nav>
+  <a href="${BASE}/">Korea Now</a> · Independent, free, and not affiliated with any tourism body.
+</footer>
 </div>
 </body>
 </html>`
@@ -328,6 +511,7 @@ function km(a, b) {
 
 const { SPOTS, REGIONS, CATEGORY_LABEL } = await loadTs('src/data/spots.ts')
 const { VISITOR_RHYTHM } = await loadTs('src/data/visitorRhythm.ts')
+const { FOOD_PLACES } = await loadTs('src/data/eat.ts')
 const regionLabel = Object.fromEntries(REGIONS.map((r) => [r.id, r.label]))
 
 const enriched = SPOTS.map((s) => ({
@@ -336,16 +520,25 @@ const enriched = SPOTS.map((s) => ({
   categoryLabel: CATEGORY_LABEL[s.category] ?? s.category,
 }))
 
+// 먹거리 절에서 id 로 바로 찾기 위한 색인
+const byId = Object.fromEntries(enriched.map((s) => [s.id, s]))
+
 for (const s of enriched) {
   const near = enriched
     .map((x) => ({ s: x, km: km(s, x) }))
     .sort((a, b) => a.km - b.km)
   const dir = join(dist, 'spot', s.id)
   await mkdir(dir, { recursive: true })
-  await writeFile(join(dir, 'index.html'), spotPage(s, enriched, near, VISITOR_RHYTHM), 'utf8')
+  await writeFile(join(dir, 'index.html'), spotPage(s, enriched, near, VISITOR_RHYTHM, FOOD_PLACES, byId), 'utf8')
 }
 
 await writeFile(join(dist, 'spot', 'index.html'), hubPage(enriched, REGIONS), 'utf8')
+
+for (const d of DOC_PAGES) {
+  const dir = join(dist, d.slug)
+  await mkdir(dir, { recursive: true })
+  await writeFile(join(dir, 'index.html'), docPage(d), 'utf8')
+}
 
 // robots.txt — 도메인 루트에 올릴 때를 위한 것.
 // 하위 경로(/korea-now/)로 배포하면 크롤러는 사이트 루트의 robots.txt만 읽으므로 이 파일은 무시된다.
@@ -362,6 +555,7 @@ const urls = [
   { loc: `${SITE}${BASE}/`, pri: '1.0', freq: 'daily' },
   { loc: `${SITE}${BASE}/spot/`, pri: '0.9', freq: 'weekly' },
   ...enriched.map((s) => ({ loc: `${SITE}${BASE}/spot/${s.id}/`, pri: '0.8', freq: 'weekly' })),
+  ...DOC_PAGES.map((d) => ({ loc: `${SITE}${BASE}/${d.slug}/`, pri: '0.3', freq: 'yearly' })),
 ]
 await writeFile(
   join(dist, 'sitemap.xml'),
