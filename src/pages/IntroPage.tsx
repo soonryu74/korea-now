@@ -6,6 +6,7 @@ import { markIntroSeen } from '../lib/intro'
 const TABS = [
   { ic: '🗺️', name: 'Home', text: 'Which places are quiet right now, and what each one costs to enter.' },
   { ic: '📍', name: 'Nearby', text: 'What is around you, with the walk in minutes.' },
+  { ic: '🍜', name: 'Eat', text: 'Market food alleys, what to order, and what it should cost.' },
   { ic: '🇰🇷', name: 'Today', text: 'One Korean phrase, one custom worth knowing, and the won in your own currency.' },
   { ic: '🎫', name: 'Stamps', text: 'A record of where you went. It stays on your phone.' },
 ]

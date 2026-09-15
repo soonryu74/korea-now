@@ -120,9 +120,9 @@ button.pill:active { transform: scale(.96); }
 
 /* 하단 내비 */
 .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; z-index: 30; background: var(--card); border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom); }
-.bottom-nav .inner { max-width: 520px; margin: 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); height: var(--nav-h); }
-.bottom-nav a { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 11px; color: var(--muted); }
-.bottom-nav a .ic { font-size: 20px; }
+.bottom-nav .inner { max-width: 520px; margin: 0 auto; display: grid; grid-template-columns: repeat(5, 1fr); height: var(--nav-h); }
+.bottom-nav a { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 10.5px; color: var(--muted); white-space: nowrap; }
+.bottom-nav a .ic { font-size: 19px; }
 .bottom-nav a.active { color: var(--primary); font-weight: 700; }
 
 .disclaimer { font-size: 11px; color: var(--muted); padding: 8px 2px 0; line-height: 1.5; }
@@ -144,7 +144,7 @@ button.pill:active { transform: scale(.96); }
 .nearby-body .meta b { color: var(--text); }
 .nearby-links { display: flex; gap: 10px; margin-top: 6px; font-size: 12.5px; }
 .nearby-links a { color: var(--primary); font-weight: 600; }
-.bottom-nav .inner { grid-template-columns: repeat(4, 1fr); }
+.bottom-nav .inner { grid-template-columns: repeat(5, 1fr); }
 
 /* 14일 예측 스트립 */
 .daily-strip { display: grid; grid-template-columns: repeat(14, 1fr); gap: 3px; align-items: end; margin-top: 8px; }
@@ -382,3 +382,62 @@ button.pill:active { transform: scale(.96); }
 
 /* 주변 지점 핀 — 관광지 핀보다 조용하게 */
 .marker.near { background: #fff; color: var(--text); font-size: 12px; border-color: #fff; box-shadow: 0 1px 5px rgba(0,0,0,.3); }
+
+/* ── 먹거리 (Eat) ── */
+.lede-sm { font-size: 13.5px; color: var(--muted); line-height: 1.6; margin: 2px 0 10px; }
+
+.food-card { padding-top: 0; padding-bottom: 0; }
+.food-card.open { padding-bottom: 14px; }
+.food-head {
+  width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  background: none; border: none; padding: 14px 0; text-align: left; color: inherit;
+}
+.food-head .name { font-weight: 700; font-size: 15.5px; }
+.food-head .meta { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+.food-head .chev { font-size: 10px; color: var(--muted); }
+.food-card .why { font-size: 14px; line-height: 1.6; margin: 0 0 10px; color: #374151; }
+.food-tip { font-size: 13px; line-height: 1.6; color: var(--muted); margin: 10px 0 0; }
+.food-link { display: inline-block; margin-top: 10px; font-size: 13.5px; color: var(--primary); font-weight: 600; }
+
+/* 메뉴 — 한글을 크게 둔다. 이 화면을 그대로 보여 주고 주문하라는 뜻이다. */
+.dishes { list-style: none; margin: 0; padding: 0; }
+.dish { padding: 11px 0; border-top: 1px solid var(--line); }
+.dish:first-child { border-top: none; }
+.dish-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.dish-en { font-weight: 600; font-size: 14.5px; }
+.dish-won { font-size: 12.5px; color: var(--muted); white-space: nowrap; }
+.dish-ko { display: flex; align-items: baseline; gap: 8px; margin-top: 3px; flex-wrap: wrap; }
+.dish-ko b { font-size: 19px; letter-spacing: -.2px; }
+.dish-say { font-size: 12.5px; color: var(--primary); }
+.dish-note { font-size: 12.5px; color: var(--muted); line-height: 1.55; margin-top: 4px; }
+
+/* ── 쇼핑 (Buy) ── */
+.tax-card { border: 1px solid rgba(15,118,110,.3); background: #f0fdfa; }
+.tax-card p { font-size: 14px; line-height: 1.6; margin: 6px 0 0; }
+.tax-card .small { font-size: 12.5px; color: var(--muted); }
+
+.shop-card .name { font-weight: 700; font-size: 15px; }
+.shop-card .meta { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+.shop-note { font-size: 13px; color: #374151; line-height: 1.55; margin: 8px 0 0; }
+.shop-addr { margin-top: 8px; font-size: 13px; line-height: 1.5; }
+.shop-addr .ko { color: var(--muted); font-size: 13.5px; margin-top: 2px; }
+
+.buy-item .buy-head { display: flex; gap: 11px; align-items: flex-start; }
+.buy-item .buy-ic { font-size: 22px; line-height: 1.2; }
+.buy-item .name { font-weight: 700; font-size: 15px; }
+.buy-item .name .ko { font-weight: 400; font-size: 13px; color: var(--muted); margin-left: 5px; }
+.buy-won { font-size: 12.5px; color: var(--primary); font-weight: 600; margin-top: 2px; }
+.buy-what { font-size: 13.5px; line-height: 1.6; color: #374151; margin: 8px 0 0; }
+.buy-where { font-size: 12.5px; color: var(--muted); line-height: 1.55; margin-top: 6px; }
+.buy-where b { color: var(--text); }
+
+/* 다른 화면으로 넘어가는 큰 링크 */
+.big-link {
+  display: flex; align-items: center; gap: 12px; margin-top: 14px;
+  padding: 14px; background: var(--card); border: 1px solid var(--line);
+  border-radius: var(--radius); color: inherit;
+}
+.big-link .ic { font-size: 22px; }
+.big-link b { display: block; font-size: 15px; }
+.big-link small { display: block; font-size: 12.5px; color: var(--muted); line-height: 1.5; margin-top: 2px; }
+.big-link .go { margin-left: auto; color: var(--primary); font-weight: 700; }

@@ -9,6 +9,8 @@ import TodayPage from './pages/TodayPage'
 import StampsPage from './pages/StampsPage'
 import NearbyPage from './pages/NearbyPage'
 import IntroPage from './pages/IntroPage'
+import EatPage from './pages/EatPage'
+import BuyPage from './pages/BuyPage'
 import { shouldShowIntro } from './lib/intro'
 
 // 화면을 옮길 때마다 방문을 남긴다 (쿠키 없음, 개인 식별 없음)
@@ -20,6 +22,7 @@ function BottomNav() {
       <div className="inner">
         <NavLink to="/" end><span className="ic">🗺️</span>Home</NavLink>
         <NavLink to="/nearby"><span className="ic">📍</span>Nearby</NavLink>
+        <NavLink to="/eat"><span className="ic">🍜</span>Eat</NavLink>
         <NavLink to="/today"><span className="ic">🇰🇷</span>Today</NavLink>
         <NavLink to="/stamps"><span className="ic">🎫</span>Stamps</NavLink>
       </div>
@@ -66,6 +69,8 @@ export default function App() {
           <Route path="/intro" element={<IntroPage />} />
           <Route path="/spot/:id" element={<SpotRoute />} />
           <Route path="/nearby" element={<NearbyPage />} />
+          <Route path="/eat" element={<EatPage />} />
+          <Route path="/buy" element={<BuyPage />} />
           <Route path="/today" element={<TodayPage />} />
           <Route path="/stamps" element={<StampsPage />} />
         </Routes>

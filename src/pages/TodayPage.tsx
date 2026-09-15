@@ -85,6 +85,15 @@ export default function TodayPage() {
         <SpotCard key={s.id} spot={s} congestion={congestion[s.id]} />
       ))}
 
+      <Link className="big-link" to="/buy">
+        <span className="ic" aria-hidden="true">🎁</span>
+        <span>
+          <b>What to take home</b>
+          <small>Official Seoul goods shops, what visitors buy most, and how to claim the tax back</small>
+        </span>
+        <span className="go">→</span>
+      </Link>
+
       <Link className="intro-relink" to="/intro"><u>What is this app?</u></Link>
     </div>
   )
